@@ -1,6 +1,7 @@
 import { get } from "mongoose";
 import cartModels, { ICart, ICartItem } from "../models/cartModels";
 import productModels from "../models/productModels";
+import { IOrderItem, orderModels } from "../models/orderModels";
 
 interface   CreateCartForUser{
     userId: string ;
@@ -161,3 +162,49 @@ const calculateCartTotalItem = ({
 
     return total;
 }
+
+interface Checkout{
+    userId: string;
+    address: string; 
+}
+
+export const checkout = async ({userId, address}: Checkout) => {
+
+    if(!address){
+        return {data: "Please provide address", statusCode: 400};  // check if address is provided or not. If not, return an error message. 400 stands for Bad Request. 404 stands for Not Found. 200 stands for Ok.
+    }
+    // logic to checkout cart
+    const cart = await getActiveCartForUser({userId});
+
+    const orderItems: IOrderItem[] = []
+
+    for (const item of cart.items)
+    {
+        const product = await productModels.findById(item.product);
+        if(!product){
+            return {data: "Product not found", statusCode: 404};
+        }
+
+        const orderItem: IOrderItem =
+        {
+            productTitle: product.title,
+            productImageUrl: product.image,
+            quantity: item.quantity,
+            unitePrice: item.unitPrice
+        }
+        orderItems.push(orderItem);
+    }
+    const order = await orderModels.create({
+        orderItems,
+        userId,
+        address,
+        total: cart.totalAmount,
+    })
+    await order.save();
+
+    //update  the cart status to be completed
+
+    cart.status = "completed";
+    await cart.save();
+    return {data: order, statusCode: 201};
+} 

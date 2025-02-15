@@ -52,6 +52,6 @@ export const login = async ({email,password}: LoginParams) => {
 
 const generateJWT = (data: any) => {
     // Code to generate JWT
-    return jwt.sign(data, 'FWbHkVbAywzNWXaO6ekFa7o4evyxKZXu',{expiresIn: '24h'});
+    return jwt.sign(data, 'OcVFrByeVuRjrBmQgbUbSOTAEdFhPzOO',{expiresIn: '24h'});
 
 }

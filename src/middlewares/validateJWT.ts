@@ -10,18 +10,18 @@ const validateJWT = (req: ExtendRequest, res: Response, next: NextFunction) => {
     const authorizationHeader = req.get("Authorization");
 
     if(!authorizationHeader){
-       res.status(403).send("Unauthorized");
+       res.status(403).send("Unauthorized Header was not provided");
        return
     }
      const token = authorizationHeader.split(" ")[1];
-        if(token === undefined || token === null || token === ""){
-            res.status(403).send("Unauthorized");
+        if(!token){
+            res.status(403).send(" Bearer token was not provided");
             return
         }
 
-        jwt.verify(token, 'FWbHkVbAywzNWXaO6ekFa7o4evyxKZXu', async (err, payload) => {
+        jwt.verify(token, 'OcVFrByeVuRjrBmQgbUbSOTAEdFhPzOO', async (err, payload) => {
             if(err){
-                res.status(403).send("Unauthorized");
+                res.status(403).send("Invalid token");
                 return
             }
                 if(!payload ){
