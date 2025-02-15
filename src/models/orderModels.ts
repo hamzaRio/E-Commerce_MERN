@@ -10,8 +10,8 @@ export interface IOrderItem {
 export interface IOrder extends Document {
     userId: string | ObjectId;
     orderItems: IOrderItem[];
-    totalPrice: number;
-    adresse: string;
+    total: number;
+    address: string;
     // add any other fields as needed       
 }
 
@@ -25,8 +25,8 @@ const orderItemSchema = new Schema<IOrderItem>({
 const orderSchema = new Schema<IOrder>({
     userId: { type: Schema.Types.ObjectId, ref: "User", required: true },
     orderItems: [orderItemSchema],
-    totalPrice: { type: "number", required: true },
-    adresse: { type: "string", required: true },
+    total: { type: "number", required: true },
+    address: { type: "string", required: true },
     // add any other fields as needed
 })
 
