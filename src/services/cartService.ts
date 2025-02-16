@@ -1,210 +1,211 @@
-import { get } from "mongoose";
 import cartModels, { ICart, ICartItem } from "../models/cartModels";
 import productModels from "../models/productModels";
 import { IOrderItem, orderModels } from "../models/orderModels";
 
-interface   CreateCartForUser{
-    userId: string ;
-    
-}
-
-const createCartForUser = async ({userId}: CreateCartForUser) => {
-    // logic to create a cart for a user
-    const cart =  await cartModels.create({userId, totalAmount: 0});
-    await cart.save();
-    return cart;
-}
-
-interface GetActiveCartForUser{
+interface CreateCartForUser {
     userId: string;
 }
 
-export const getActiveCartForUser = async ({userId}: GetActiveCartForUser) => { 
-    // logic to get active cart for a user
-    let cart = await cartModels.findOne({userId, status: "active"});
-    
-    if(!cart){
-        cart = await createCartForUser({userId});
-    } 
-    return cart;
+const createCartForUser = async ({ userId }: CreateCartForUser) => {
+    try {
+        const cart = await cartModels.create({ userId, totalAmount: 0 });
+        await cart.save();
+        return cart;
+    } catch (error) {
+        console.error("Error creating cart:", error);
+        throw new Error("Failed to create cart");
+    }
+};
+
+interface GetActiveCartForUser {
+    userId: string;
 }
 
+export const getActiveCartForUser = async ({ userId }: GetActiveCartForUser) => {
+    try {
+        let cart = await cartModels.findOne({ userId, status: "active" });
 
-interface ClearCart{
-        userId: string
+        if (!cart) {
+            cart = await createCartForUser({ userId });
+        }
+        return cart;
+    } catch (error) {
+        console.error("Error getting active cart:", error);
+        throw new Error("Failed to get active cart");
+    }
+};
+
+interface ClearCart {
+    userId: string;
 }
 
-export const clearCart = async ({userId}:ClearCart) =>{
-    const  cart = await getActiveCartForUser({userId})
+export const clearCart = async ({ userId }: ClearCart) => {
+    try {
+        const cart = await getActiveCartForUser({ userId });
 
+        cart.items = [];
+        cart.totalAmount = 0;
 
-    cart.items = []
-    cart.totalAmount = 0
+        const updatedCart = await cart.save();
+        return { data: updatedCart, statusCode: 200 };
+    } catch (error) {
+        console.error("Error clearing cart:", error);
+        return { data: "Failed to clear cart", statusCode: 500 };
+    }
+};
 
-    const updatedCart = await cart.save()
-
-    return {data: updatedCart, statusCode:200 }
-}
-
-
-interface AddItemToCart{
+interface AddItemToCart {
     productId: string;
-    userId: any;
-    quantity: number;
-}
-
-export const addItemToCart = async ({userId, productId, quantity}: AddItemToCart) => {
-    // logic to add item to cart
-    const cart = await getActiveCartForUser({userId});
-    const existsIncart = cart.items.find((p)=> p.product.toString() === productId);
-
-    if(existsIncart){
-        return {data: "Item already exists in cart", statusCode: 400};
-    }
-
-const product = await productModels.findById(productId);
-
-if(!product){
-    return {data: "Product not found", statusCode: 404}; 
-}
-
-if (product.stock < quantity){
-    return {data: "Insufficient stock", statusCode: 400};
-}
-
-
-cart.items.push({product: product, unitPrice: product.price, quantity});
-
-cart.totalAmount += product.price * quantity;
-
-const updatedCart = await cart.save();
-
-return {data: updatedCart, statusCode: 201 };
-
-}
-
-
-interface UpdateItemIncart{
-    productId: any;
     userId: string;
     quantity: number;
 }
 
-export const updateItemIncart = async ({userId, productId, quantity}: UpdateItemIncart) => {
-    // logic to update item in cart
-    const cart = await getActiveCartForUser({userId});
-    const existsIncart = cart.items.find((p)=> p.product.toString() === productId);
+export const addItemToCart = async ({ userId, productId, quantity }: AddItemToCart) => {
+    try {
+        const cart = await getActiveCartForUser({ userId });
+        const existsInCart = cart.items.find((p) => p.product.toString() === productId);
 
-    if(!existsIncart){
-        return {data: "Item does not exist in cart", statusCode: 400};
-    }   
+        if (existsInCart) {
+            return { data: "Item already exists in cart", statusCode: 400 };
+        }
 
-    const product = await productModels.findById(productId);
+        const product = await productModels.findById(productId);
 
-    if(!product){
-        return {data: "Product not found", statusCode: 404};    
-    } 
+        if (!product) {
+            return { data: "Product not found", statusCode: 404 };
+        }
 
-    if(product.stock < quantity){
-        return {data: "Product not found", statusCode: 404};
+        if (product.stock < quantity) {
+            return { data: "Insufficient stock", statusCode: 400 };
+        }
+
+        cart.items.push({ product: product, unitPrice: product.price, quantity });
+        cart.totalAmount += product.price * quantity;
+
+        const updatedCart = await cart.save();
+        return { data: updatedCart, statusCode: 201 };
+    } catch (error) {
+        console.error("Error adding item to cart:", error);
+        return { data: "Failed to add item to cart", statusCode: 500 };
     }
+};
 
-     const  otherCartItems = cart.items.filter((p)=> p.product.toString() !== productId);
+interface UpdateItemInCart {
+    productId: string;
+    userId: string;
+    quantity: number;
+}
 
-     let total = calculateCartTotalItem({cartItems:otherCartItems})
+export const updateItemInCart = async ({ userId, productId, quantity }: UpdateItemInCart) => {
+    try {
+        const cart = await getActiveCartForUser({ userId });
+        const existsInCart = cart.items.find((p) => p.product.toString() === productId);
 
-     existsIncart.quantity = quantity;
+        if (!existsInCart) {
+            return { data: "Item does not exist in cart", statusCode: 400 };
+        }
 
-     total += existsIncart.unitPrice * existsIncart.quantity;
+        const product = await productModels.findById(productId);
 
-     cart.totalAmount = total;
+        if (!product) {
+            return { data: "Product not found", statusCode: 404 };
+        }
 
-     const updatedCart = await cart.save()
+        if (product.stock < quantity) {
+            return { data: "Insufficient stock", statusCode: 400 };
+        }
 
-        return {data: updatedCart, statusCode: 200};
-}   // logic to update item in cart
+        const otherCartItems = cart.items.filter((p) => p.product.toString() !== productId);
+        let total = calculateCartTotalItem({ cartItems: otherCartItems });
 
-interface DeleteItemIncart{
-    productId: any;
+        existsInCart.quantity = quantity;
+        total += existsInCart.unitPrice * existsInCart.quantity;
+
+        cart.totalAmount = total;
+
+        const updatedCart = await cart.save();
+        return { data: updatedCart, statusCode: 200 };
+    } catch (error) {
+        console.error("Error updating item in cart:", error);
+        return { data: "Failed to update item in cart", statusCode: 500 };
+    }
+};
+
+interface DeleteItemInCart {
+    productId: string;
     userId: string;
 }
 
-export const deleteItemIncart   = async ({userId, productId}: DeleteItemIncart) =>{
-    const cart  = await getActiveCartForUser({userId})
-    const existsIncart = cart.items.find(
-        (p) => p.product.toString() === productId
-    );
-    if(!existsIncart)
-    {
-        return {data: "Item does not exist in cart ", statusCode: 400}
+export const deleteItemInCart = async ({ userId, productId }: DeleteItemInCart) => {
+    try {
+        const cart = await getActiveCartForUser({ userId });
+        const existsInCart = cart.items.find((p) => p.product.toString() === productId);
+
+        if (!existsInCart) {
+            return { data: "Item does not exist in cart", statusCode: 400 };
+        }
+
+        const otherCartItems = cart.items.filter((p) => p.product.toString() !== productId);
+        const total = calculateCartTotalItem({ cartItems: otherCartItems });
+
+        cart.items = otherCartItems;
+        cart.totalAmount = total;
+
+        const updatedCart = await cart.save();
+        return { data: updatedCart, statusCode: 200 };
+    } catch (error) {
+        console.error("Error deleting item from cart:", error);
+        return { data: "Failed to delete item from cart", statusCode: 500 };
     }
-    const  otherCartItems = cart.items.filter((p)=> p.product.toString() !== productId);
+};
 
-   const total = calculateCartTotalItem({cartItems:otherCartItems})
+const calculateCartTotalItem = ({ cartItems }: { cartItems: ICartItem[] }) => {
+    return cartItems.reduce((sum, product) => sum + product.quantity * product.unitPrice, 0);
+};
 
-    cart.items = otherCartItems;
-    cart.totalAmount = total;
-
-    const updatedCart = await cart.save()
-
-       return {data: updatedCart, statusCode: 200};
-}
-
-const calculateCartTotalItem = ({
-    cartItems,
-    }: {
-        cartItems:ICartItem[];
-    }) =>{
-    const total  = cartItems.reduce((sum,product)=>{
-        sum += product.quantity * product.unitPrice;
-        return sum;
-    },0);
-
-    return total;
-}
-
-interface Checkout{
+interface Checkout {
     userId: string;
-    address: string; 
+    address: string;
 }
 
-export const checkout = async ({userId, address}: Checkout) => {
-
-    if(!address){
-        return {data: "Please provide address", statusCode: 400};  // check if address is provided or not. If not, return an error message. 400 stands for Bad Request. 404 stands for Not Found. 200 stands for Ok.
-    }
-    // logic to checkout cart
-    const cart = await getActiveCartForUser({userId});
-
-    const orderItems: IOrderItem[] = []
-
-    for (const item of cart.items)
-    {
-        const product = await productModels.findById(item.product);
-        if(!product){
-            return {data: "Product not found", statusCode: 404};
+export const checkout = async ({ userId, address }: Checkout) => {
+    try {
+        if (!address) {
+            return { data: "Please provide an address", statusCode: 400 };
         }
 
-        const orderItem: IOrderItem =
-        {
-            productTitle: product.title,
-            productImageUrl: product.image,
-            quantity: item.quantity,
-            unitePrice: item.unitPrice
+        const cart = await getActiveCartForUser({ userId });
+
+        const orderItems: IOrderItem[] = [];
+        for (const item of cart.items) {
+            const product = await productModels.findById(item.product);
+            if (!product) {
+                return { data: "Product not found", statusCode: 404 };
+            }
+
+            orderItems.push({
+                productTitle: product.title,
+                productImageUrl: product.image,
+                quantity: item.quantity,
+                unitePrice: item.unitPrice
+            });
         }
-        orderItems.push(orderItem);
+
+        const order = await orderModels.create({
+            orderItems,
+            userId,
+            address,
+            total: cart.totalAmount,
+        });
+
+        await order.save();
+
+        cart.status = "completed";
+        await cart.save();
+
+        return { data: order, statusCode: 201 };
+    } catch (error) {
+        console.error("Error during checkout:", error);
+        return { data: "Failed to process checkout", statusCode: 500 };
     }
-    const order = await orderModels.create({
-        orderItems,
-        userId,
-        address,
-        total: cart.totalAmount,
-    })
-    await order.save();
-
-    //update  the cart status to be completed
-
-    cart.status = "completed";
-    await cart.save();
-    return {data: order, statusCode: 201};
-} 
+};

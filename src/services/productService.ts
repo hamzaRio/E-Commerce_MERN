@@ -8,7 +8,10 @@ export const getAllProducts = async () => {
 
 export const seedIntialProducts = async () => {
     // Code to seed initial products
-    const products = [
+
+    try{
+
+      const products = [
         { title: "Iphone 12", image: "https://tse4.mm.bing.net/th?id=OIP.OkefZiYGXm5zqd_nmhDfIAHaHa&pid=Api", price: 1200, stock: 10 },
         { title: "Macbook Pro", image: "https://tse3.mm.bing.net/th?id=OIP.6pbbCNkIfwwX99p0Al5lIwHaFj&pid=Api", price: 2500, stock: 5 },
         { title: "Ipad Pro", image: "https://tse3.mm.bing.net/th?id=OIP.Cs4QZ_1wlrtYw1CnSTH7zAHaEK&pid=Api", price: 900, stock: 25 },
@@ -29,6 +32,11 @@ export const seedIntialProducts = async () => {
       } else {
         console.log('Products already exist. No need to seed.');
       }
+    } 
+    catch(error){
+        console.error("can not seed products", error);
+    }
+   
       
    
 }   
