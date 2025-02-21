@@ -5,12 +5,14 @@ import { seedIntialProducts } from './services/productService';
 import productRoute from './routes/productRoute';
 import cartRoute from './routes/cartRoute';
 import dotenv from "dotenv";
+import * as cors from 'cors';
 
 dotenv.config();
 
 const app = express();
 
 app.use(express.json());
+app.use(cors.default());
 
 const port = 3001;
 
