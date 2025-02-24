@@ -15,20 +15,27 @@ import { Button, Grid } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 
 function NavBar() {
-  const { username, isAuthenticated } = useAuth();
-  const [anchorElUser, setAnchorElUser] = React.useState<null | HTMLElement>(
-    null
-  );
-
-  const navigate = useNavigate()
+  const { username, isAuthenticated, logout } = useAuth();
+  const [anchorElUser, setAnchorElUser] = React.useState<null | HTMLElement>(null);
+  const navigate = useNavigate();
 
   const handleOpenUserMenu = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorElUser(event.currentTarget);
   };
 
+  const handleCloseUserMenu = () => {
+    setAnchorElUser(null);
+  };
+
   const handleLogin = () => {
-    // Add your login logic here
     navigate("/login");
+  };
+
+  const handleLogout = () => {
+    console.log("Logging out...");
+    logout();
+    navigate("/");
+    handleCloseUserMenu();
   };
 
   return (
@@ -43,13 +50,19 @@ function NavBar() {
               alignItems: "center",
             }}
           >
-            {/* Logo & Title Section */}
-            <Box sx={{ display: "flex", alignItems: "center" }}>
+            {/* 🔹 Clickable Logo (Tech Hub) */}
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                cursor: "pointer", // ✅ Makes it look clickable
+              }}
+              onClick={() => navigate("/")} // ✅ Redirects to Home on click
+            >
               <AdbIcon sx={{ display: "flex", mr: 1 }} />
               <Typography
                 variant="h6"
                 noWrap
-                component="a"
                 sx={{
                   mr: 2,
                   display: { xs: "none", md: "flex" },
@@ -98,12 +111,12 @@ function NavBar() {
                       horizontal: "right",
                     }}
                     open={Boolean(anchorElUser)}
-                    onClose={() => setAnchorElUser(null)}
+                    onClose={handleCloseUserMenu}
                   >
-                    <MenuItem onClick={() => setAnchorElUser(null)}>
+                    <MenuItem onClick={handleCloseUserMenu}>
                       <Typography sx={{ textAlign: "center" }}>Orders</Typography>
                     </MenuItem>
-                    <MenuItem onClick={() => setAnchorElUser(null)}>
+                    <MenuItem onClick={handleLogout}>
                       <Typography sx={{ textAlign: "center" }}>Logout</Typography>
                     </MenuItem>
                   </Menu>
