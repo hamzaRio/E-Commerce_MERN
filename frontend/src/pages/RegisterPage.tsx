@@ -4,6 +4,7 @@ import Box from "@mui/material/Box";
 import { Button, TextField } from "@mui/material";
 import { useRef, useState } from "react";
 import { BASE_URL } from "../constants/baseUrl";
+import { useAuth } from "../context/Auth/AuthContext";
 
 const RegisterPage = () => { 
         const [error, setError] = useState("");
@@ -11,6 +12,9 @@ const RegisterPage = () => {
         const lastnameRef = useRef<HTMLInputElement>(null);
         const emailRef = useRef<HTMLInputElement>(null);
         const passwordRef = useRef<HTMLInputElement>(null);
+
+        const { login } = useAuth(); 
+            
     
         const onSubmit = async () => {
             
@@ -44,8 +48,19 @@ const RegisterPage = () => {
                 setError("An error occurred while registering");
                 return;
             }
-            const data = await response.json();
-            console.log(data);
+            const token = await response.json();
+            
+
+            if(!token)
+            {
+                setError("An error occurred while registering");
+                return;
+            }
+
+
+            login(email, token);
+
+
            
             alert("Registration successful!");
            // Reset form fields
@@ -53,6 +68,8 @@ const RegisterPage = () => {
             lastnameRef.current!.value = "";
             emailRef.current!.value = "";
             passwordRef.current!.value = "";
+
+            console.log(token);
          };  
 
 
