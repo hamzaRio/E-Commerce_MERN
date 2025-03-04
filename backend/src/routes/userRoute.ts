@@ -11,7 +11,9 @@ route.post('/register',  async ( request,response) => {
     const {statusCode, data} = await register({ email, password, firstname, lastname });
     response.status(statusCode).json(data);
     } catch(err){
+
         response.status(500).send({ message: "Internal Server Error" });
+       
     }
 });
 

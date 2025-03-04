@@ -3,7 +3,7 @@ import {
     addItemToCart, 
     checkout, 
     clearCart, 
-    deleteItemInCart, 
+    deleteItemIncart, 
     getActiveCartForUser, 
     updateItemInCart 
 } from "../services/cartService";
@@ -43,6 +43,7 @@ router.post("/items", validateJWT, async (req: ExtendRequest, res) => {
         res.status(response.statusCode).send(response.data);
     } catch (err) {
         res.status(500).send({ error: "Failed to add item to cart!" });
+        console.log(err);
     }
 });
 
@@ -63,7 +64,7 @@ router.delete("/items/:productId", validateJWT, async (req: ExtendRequest, res) 
     try {
         const userId = req?.user?._id;
         const { productId } = req.params;
-        const response = await deleteItemInCart({ userId, productId });
+        const response = await deleteItemIncart({ userId, productId });
         res.status(response.statusCode).send(response.data);
     } catch (err) {
         res.status(500).send({ error: "Failed to delete item from cart!" });

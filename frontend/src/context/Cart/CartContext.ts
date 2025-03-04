@@ -2,24 +2,15 @@ import { createContext, useContext } from "react";
 import { CartItem } from "../../types/CartItem";
 
 interface CartContextType {
-    CartItems: CartItem[];
+    cartItems: CartItem[];  // ✅ Fix property name
     totalAmount: number;
-    addItemtoCart: (ProductId: string) => void;
-
+    addItemToCart: (productId: string) => void;  // ✅ Fix function name
 }
 
-
-
-
-
 export const CartContext = createContext<CartContextType>({
-    CartItems: [],
+    cartItems: [], // ✅ Match provider state
     totalAmount: 0,
-    addItemtoCart: () => {}    
+    addItemToCart: () => {}    
 });
 
-
-
-
 export const useCart = () => useContext(CartContext);
-    
