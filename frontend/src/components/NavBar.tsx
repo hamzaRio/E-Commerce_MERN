@@ -14,9 +14,11 @@ import ShoppingCart from "@mui/icons-material/ShoppingCart";
 import { useAuth } from "../context/Auth/AuthContext";
 import { Badge, Button, Grid } from "@mui/material";
 import { useNavigate } from "react-router-dom";
+import { useCart } from "../context/Cart/CartContext";
 
 function NavBar() {
   const { username, isAuthenticated, logout } = useAuth();
+  const {cartItems} = useCart();
   const [anchorElUser, setAnchorElUser] = React.useState<null | HTMLElement>(
     null
   );
@@ -57,6 +59,8 @@ function NavBar() {
               alignItems: "center",
             }}
           >
+            <Button  onClick={() => navigate("/")} sx={{color: "white"}}>
+            
             {/* 🔹 Clickable Logo (Tech Hub) */}
             <Box
               sx={{
@@ -64,7 +68,7 @@ function NavBar() {
                 alignItems: "center",
                 cursor: "pointer", // ✅ Makes it look clickable
               }}
-              onClick={() => navigate("/")} // ✅ Redirects to Home on click
+              // ✅ Redirects to Home on click
             >
               <AdbIcon sx={{ display: "flex", mr: 1 }} />
               <Typography
@@ -80,7 +84,7 @@ function NavBar() {
                 Tech Hub
               </Typography>
             </Box>
-
+            </Button>
             {/* User Profile or Login Button */}
             <Box
               flexDirection="row"
@@ -90,7 +94,7 @@ function NavBar() {
               justifyContent="center"
             >
               <IconButton aria-label="cart" onClick={handleCart}>
-                <Badge badgeContent={4} color="secondary">
+                <Badge badgeContent={cartItems.length} color="secondary">
                   <ShoppingCart sx={{color: "white"}} />
                 </Badge>
               </IconButton>

@@ -27,6 +27,9 @@ const CartProvider: FC<PropsWithChildren> = ({ children }) => {
 
         const cart = await response.json();
 
+        // Debug: Log the API response to verify the image field is included
+        console.log("Cart API Response:", cart);
+
         if (!cart || !cart.items) {
           setError("Cart data is invalid.");
           setCartItems([]);
@@ -34,15 +37,19 @@ const CartProvider: FC<PropsWithChildren> = ({ children }) => {
         }
 
         const cartItemsMapped = cart.items.map(
-             // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           ({ product, quantity, unitPrice }: { product: any; quantity: number; unitPrice: number }) => ({
             productId: product._id,
             title: product.title,
-            image: product.image,
+            // Use the product.image or fallback to a placeholder image if missing
+            image: product.image || "https://via.placeholder.com/100",
             quantity,
             unitPrice,
           })
         );
+
+        // Debug: Log the mapped cart items to verify the image field
+        console.log("Mapped Cart Items:", cartItemsMapped);
 
         setCartItems(cartItemsMapped);
         setTotalAmount(cart.totalAmount);
@@ -74,21 +81,27 @@ const CartProvider: FC<PropsWithChildren> = ({ children }) => {
 
       const cart = await response.json();
 
+      // Debug: Log the API response when adding an item
+      console.log("Add Item API Response:", cart);
+
       if (!cart || !cart.items) {
         setError("Failed to parse cart data.");
         return;
       }
 
       const cartItemsMapped = cart.items.map(
-         // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         ({ product, quantity, unitPrice }: { product: any; quantity: number; unitPrice: number }) => ({
           productId: product._id,
           title: product.title,
-          image: product.image,
+          image: product.image || "https://via.placeholder.com/100",
           quantity,
           unitPrice,
         })
       );
+
+      // Debug: Log the mapped cart items after adding an item
+      console.log("Mapped Cart Items after add:", cartItemsMapped);
 
       setCartItems(cartItemsMapped);
       setTotalAmount(cart.totalAmount);

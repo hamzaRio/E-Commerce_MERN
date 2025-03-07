@@ -3,15 +3,6 @@ import { ICart, ICartItem, cartModels } from "../models/cartModels";
 import productModels from "../models/productModels";
 import { IOrderItem, orderModels } from "../models/orderModels";
 
-interface CreateCartForUser {
-  userId: string;
-}
-
-const createCartForUser = async ({ userId }: CreateCartForUser) => {
-  const cart = await cartModels.create({ userId, totalAmount: 0, items: [] });
-  return cart;
-};
-
 interface GetActiveCartForUser {
   userId: string;
   populateProduct?: boolean;
@@ -19,15 +10,22 @@ interface GetActiveCartForUser {
 
 export const getActiveCartForUser = async ({
   userId,
-  populateProduct,
+  populateProduct = true, // Ensure default is true
 }: GetActiveCartForUser) => {
   let cart = await cartModels.findOne({ userId, status: "active" });
 
   if (!cart) {
-    cart = await createCartForUser({ userId });
+    cart = await cartModels.create({ userId, totalAmount: 0, items: [] });
   }
 
-  return populateProduct ? await cart.populate("items.product") : cart;
+  if (populateProduct) {
+    cart = await cart.populate({
+      path: "items.product",
+      select: "title image price", // ✅ Ensure image is included
+    });
+  }
+
+  return cart;
 };
 
 interface ClearCart {
@@ -192,7 +190,7 @@ export const checkout = async ({ userId, address }: Checkout) => {
   const orderItems: IOrderItem[] = [];
 
   for (const item of cart.items) {
-    const product = await productModels.findById(item.product);
+    const product = await productModels.findById(item.product).select("title image");
 
     if (!product) {
       return { data: "Product not found", statusCode: 400 };
@@ -200,7 +198,7 @@ export const checkout = async ({ userId, address }: Checkout) => {
 
     orderItems.push({
       productTitle: product.title,
-      productImageUrl: product.image,
+      productImageUrl: product.image, // ✅ Ensure image is included
       quantity: item.quantity,
       unitePrice: item.unitPrice,
     });
