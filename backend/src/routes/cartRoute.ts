@@ -50,14 +50,14 @@ router.post("/items", validateJWT, async (req: ExtendRequest, res) => {
 // Update item in cart
 router.put("/items", validateJWT, async (req: ExtendRequest, res) => {
     try {
-        const userId = req?.user?._id;
-        const { productId, quantity } = req.body;
-        const response = await updateItemInCart({ userId, productId, quantity });
-        res.status(response.statusCode).send(response.data);
-    } catch (err) {
-        res.status(500).send({ error: "Failed to update item in cart!" });
+      const userId = req?.user?._id;
+      const { productId, quantity } = req.body;
+      const response = await updateItemInCart({ userId, productId, quantity });
+      res.status(response.statusCode).send(response.data);
+    } catch {
+      res.status(500).send("Something went wrong!");
     }
-});
+  });
 
 // Delete item from cart
 router.delete("/items/:productId", validateJWT, async (req: ExtendRequest, res) => {

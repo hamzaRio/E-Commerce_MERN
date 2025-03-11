@@ -121,11 +121,17 @@ export const updateItemInCart = async ({
     return { data: "Low stock for item", statusCode: 400 };
   }
 
-  if (existsInCart.quantity !== quantity) {
-    existsInCart.quantity = Number(quantity) || 0;
-  }
+  const otherCartItems = cart.items.filter(
+    (p) => p.product.toString() !== productId
+  );
 
-  cart.totalAmount = calculateCartTotalItems({ cartItems: cart.items });
+  let total = calculateCartTotalItems({ cartItems: otherCartItems });
+
+  existsInCart.quantity = quantity;
+  total += existsInCart.quantity * existsInCart.unitPrice;
+
+  cart.totalAmount = total;
+
   await cart.save();
 
   return {
@@ -133,7 +139,6 @@ export const updateItemInCart = async ({
     statusCode: 200,
   };
 };
-
 interface DeleteItemInCart {
   productId: any;
   userId: string;

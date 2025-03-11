@@ -3,8 +3,14 @@ import { useCart } from "../context/Cart/CartContext";
 import { useEffect } from "react";
 
 const CartPage = () => {
-    const { cartItems, totalAmount } = useCart();
+    const { cartItems, totalAmount, updateItemToCart } = useCart();
 
+    const handleQuantity = (productId: string, quantity: number) => {
+        // Implement quantity increment logic
+        updateItemToCart(productId, quantity);
+    }
+    
+   
     // Debug: Log cart items to check if the image field exists
     useEffect(() => {
         console.log("Cart Items in CartPage:", cartItems);
@@ -48,8 +54,9 @@ const CartPage = () => {
                         </Box>
                         </Box>
                         <ButtonGroup variant="contained" aria-label="Basic button group">
-                        <Button>+</Button>
-                        <Button>-</Button>
+                        <Button onClick={() => handleQuantity(item.productId, item.quantity - 1)}>-</Button>
+                        <Button onClick={() => handleQuantity(item.productId, item.quantity + 1)}>+</Button>
+
                     </ButtonGroup>
                     </Box>
                 ))
