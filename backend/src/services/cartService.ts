@@ -1,7 +1,7 @@
-import { Types } from "mongoose";
 import { ICart, ICartItem, cartModels } from "../models/cartModels";
 import productModels from "../models/productModels";
 import { IOrderItem, orderModels } from "../models/orderModels";
+import mongoose from "mongoose";
 
 interface GetActiveCartForUser {
   userId: string;
@@ -50,52 +50,50 @@ interface AddItemToCart {
   userId: string;
 }
 
-export const addItemToCart = async ({
-  productId,
-  quantity,
-  userId,
-}: AddItemToCart) => {
+export const addItemToCart = async ({ productId, quantity, userId }: AddItemToCart) => {
   const cart = await getActiveCartForUser({ userId });
 
-  const existsInCart = cart.items.find(
-    (p) => p.product.toString() === productId
-  );
+  // Find if the product already exists in the cart
+  const existsInCart = cart.items.find((p) => p.product.toString() === productId);
 
   if (existsInCart) {
-    return { data: "Item already exists in cart!", statusCode: 400 };
+      // If product exists, update quantity instead of adding duplicate entry
+      existsInCart.quantity += quantity;
+  } else {
+      // If product does not exist, add new entry
+      const product = await productModels.findById(productId);
+      if (!product) {
+          return { data: "Product not found!", statusCode: 400 };
+      }
+      if (product.stock < quantity) {
+          return { data: "Low stock for item", statusCode: 400 };
+      }
+
+      cart.items.push({
+          product: productId,
+          unitPrice: Number(product.price) || 0,
+          quantity: Number(quantity) || 0,
+      });
   }
 
-  const product = await productModels.findById(productId);
-
-  if (!product) {
-    return { data: "Product not found!", statusCode: 400 };
-  }
-
-  if (product.stock < quantity) {
-    return { data: "Low stock for item", statusCode: 400 };
-  }
-
-  cart.items.push({
-    product: productId,
-    unitPrice: Number(product.price) || 0,
-    quantity: Number(quantity) || 0,
-  });
-
+  // Update total cart amount
   cart.totalAmount = calculateCartTotalItems({ cartItems: cart.items });
+
   await cart.save();
 
   return {
-    data: await getActiveCartForUser({ userId, populateProduct: true }),
-    statusCode: 200,
+      data: await getActiveCartForUser({ userId, populateProduct: true }),
+      statusCode: 200,
   };
 };
+
+
 
 interface UpdateItemInCart {
   productId: any;
   quantity: number;
   userId: string;
 }
-
 export const updateItemInCart = async ({
   productId,
   quantity,
@@ -103,13 +101,24 @@ export const updateItemInCart = async ({
 }: UpdateItemInCart) => {
   const cart = await getActiveCartForUser({ userId });
 
+  console.log("🔍 Product ID from request:", productId);
+  console.log("🛒 Cart items before update:", cart.items);
+
+  // Prevent quantity from dropping below 1
+  if (quantity < 1) {
+    return { data: "Quantity cannot be less than 1", statusCode: 400 };
+  }
+
   const existsInCart = cart.items.find(
-    (p) => p.product.toString() === productId
+    (p) => (p.product as { _id: mongoose.Types.ObjectId })._id.toString() === new mongoose.Types.ObjectId(productId).toString()
   );
 
   if (!existsInCart) {
+    console.log("⚠️ Item not found in cart!");
     return { data: "Item does not exist in cart", statusCode: 400 };
   }
+
+  console.log("✅ Item found in cart, updating...");
 
   const product = await productModels.findById(productId);
 
@@ -121,24 +130,21 @@ export const updateItemInCart = async ({
     return { data: "Low stock for item", statusCode: 400 };
   }
 
-  const otherCartItems = cart.items.filter(
-    (p) => p.product.toString() !== productId
-  );
-
-  let total = calculateCartTotalItems({ cartItems: otherCartItems });
-
   existsInCart.quantity = quantity;
-  total += existsInCart.quantity * existsInCart.unitPrice;
-
-  cart.totalAmount = total;
+  cart.totalAmount = calculateCartTotalItems({ cartItems: cart.items });
 
   await cart.save();
+
+  console.log("✅ Cart successfully updated!");
 
   return {
     data: await getActiveCartForUser({ userId, populateProduct: true }),
     statusCode: 200,
   };
 };
+
+
+
 interface DeleteItemInCart {
   productId: any;
   userId: string;
@@ -150,17 +156,28 @@ export const deleteItemIncart = async ({
 }: DeleteItemInCart) => {
   const cart = await getActiveCartForUser({ userId });
 
+  console.log("🔍 Product ID from request:", productId);
+  console.log("🛒 Cart items before deletion:", cart.items);
+
   const existsInCart = cart.items.find(
-    (p) => p.product.toString() === productId
+    (p) => (p.product as { _id: mongoose.Types.ObjectId })._id.toString() === new mongoose.Types.ObjectId(productId).toString()
   );
 
   if (!existsInCart) {
+    console.log("⚠️ Item not found in cart!");
     return { data: "Item does not exist in cart", statusCode: 400 };
   }
 
-  cart.items = cart.items.filter((p) => p.product.toString() !== productId);
+  console.log("✅ Item found in cart, deleting...");
+
+  cart.items = cart.items.filter(
+    (p) => (p.product as { _id: mongoose.Types.ObjectId })._id.toString() !== new mongoose.Types.ObjectId(productId).toString()
+  );
+
   cart.totalAmount = calculateCartTotalItems({ cartItems: cart.items });
   await cart.save();
+
+  console.log("✅ Item successfully removed from cart!");
 
   return {
     data: await getActiveCartForUser({ userId, populateProduct: true }),

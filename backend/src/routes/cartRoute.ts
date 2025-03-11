@@ -50,26 +50,41 @@ router.post("/items", validateJWT, async (req: ExtendRequest, res) => {
 // Update item in cart
 router.put("/items", validateJWT, async (req: ExtendRequest, res) => {
     try {
-      const userId = req?.user?._id;
-      const { productId, quantity } = req.body;
-      const response = await updateItemInCart({ userId, productId, quantity });
-      res.status(response.statusCode).send(response.data);
-    } catch {
-      res.status(500).send("Something went wrong!");
-    }
-  });
+        console.log("Received update request body:", req.body); // ✅ Debug request body
+        console.log("User ID:", req?.user?._id); // ✅ Debug user ID
 
-// Delete item from cart
-router.delete("/items/:productId", validateJWT, async (req: ExtendRequest, res) => {
-    try {
         const userId = req?.user?._id;
-        const { productId } = req.params;
-        const response = await deleteItemIncart({ userId, productId });
+        const { productId, quantity } = req.body;
+
+        const response = await updateItemInCart({ userId, productId, quantity });
+
+        console.log("Update Response:", response); // ✅ Debug update result
+
         res.status(response.statusCode).send(response.data);
     } catch (err) {
-        res.status(500).send({ error: "Failed to delete item from cart!" });
+        console.error("Error in update cart route:", err);
+        res.status(500).send("Something went wrong!");
     }
 });
+
+
+// Delete item from cart
+router.delete("/items", validateJWT, async (req: ExtendRequest, res) => {
+    try {
+        console.log("Received delete request body:", req.body);
+        const userId = req?.user?._id;
+        const { productId } = req.body;
+
+        const response = await deleteItemIncart({ userId, productId });
+
+        console.log("Delete Response:", response);
+        res.status(response.statusCode).send(response.data);
+    } catch (error) {
+        console.error("Error deleting item from cart:", error);
+        res.status(500).send({ message: "Internal server error" });
+    }
+});
+
 
 // Checkout
 router.post("/checkout", validateJWT, async (req: ExtendRequest, res) => {
