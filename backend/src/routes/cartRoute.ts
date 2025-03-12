@@ -67,24 +67,33 @@ router.put("/items", validateJWT, async (req: ExtendRequest, res) => {
     }
 });
 
-
-// Delete item from cart
-router.delete("/items", validateJWT, async (req: ExtendRequest, res) => {
+// ✅ Fixed Delete Item Route
+router.delete("/items", validateJWT, async (req: ExtendRequest, res): Promise<void> => {
     try {
         console.log("Received delete request body:", req.body);
+
         const userId = req?.user?._id;
         const { productId } = req.body;
+
+        if (!productId) {
+            res.status(400).json({ error: "Product ID is required!" });
+            return;
+        }
 
         const response = await deleteItemIncart({ userId, productId });
 
         console.log("Delete Response:", response);
-        res.status(response.statusCode).send(response.data);
+
+        if (!response || typeof response !== "object" || !("statusCode" in response)) {
+            throw new Error("Invalid response structure from deleteItemIncart");
+        }
+
+        res.status(response.statusCode).json(response.data);
     } catch (error) {
         console.error("Error deleting item from cart:", error);
-        res.status(500).send({ message: "Internal server error" });
+        res.status(500).json({ message: "Internal server error" });
     }
 });
-
 
 // Checkout
 router.post("/checkout", validateJWT, async (req: ExtendRequest, res) => {

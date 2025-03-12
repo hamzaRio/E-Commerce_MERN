@@ -164,24 +164,30 @@ const CartProvider: FC<PropsWithChildren> = ({ children }) => {
   
   const deleteItemInCart = async (productId: string) => {
     try {
-        const response = await fetch(`${BASE_URL}/cart/items/${productId}`, {
+        console.log("Deleting item with ID:", productId); // Debugging
+
+        const response = await fetch("http://localhost:3001/cart/items", {
             method: "DELETE",
             headers: {
                 "Content-Type": "application/json",
-                Authorization: `Bearer ${localStorage.getItem("token")}`
-            }
+                Authorization: `Bearer ${token}`, // If using JWT authentication
+            },
+            body: JSON.stringify({ productId }) // ✅ Send productId in request body
         });
 
         if (!response.ok) {
-            throw new Error("Failed to delete item");
+            throw new Error(`Failed to delete item: ${response.statusText}`);
         }
 
-        const updatedCart = await response.json();
-        setCartItems(updatedCart.items); // ✅ Update the cart state
+        console.log("Item deleted successfully");
+
+        // ✅ Remove item from the cart state
+        setCartItems((prevItems) => prevItems.filter((item) => item.productId !== productId));
     } catch (error) {
         console.error("Error deleting item:", error);
     }
 };
+
 
 
 // ✅ Ensure deleteItemInCart is included in the provider

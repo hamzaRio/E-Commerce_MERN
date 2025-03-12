@@ -16,6 +16,7 @@ const CartPage = () => {
     };
 
     const handleRemoveItem = (productId: string) => {
+        console.log("Attempting to remove item with ID:", productId); // Debugging
         deleteItemInCart(productId);
     };
 
