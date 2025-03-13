@@ -131,31 +131,22 @@ const CartProvider: FC<PropsWithChildren> = ({ children }) => {
 
       const cart = await response.json();
 
-      if (!cart) {
+      if (!cart || !cart.items) {
         setError("Failed to parse cart data");
+        return;
       }
 
       const cartItemsMapped = cart.items.map(
-        
-        ({
-          product,
-          quantity,
-          unitPrice,
-        }: {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          product: any;
-          quantity: number;
-          unitPrice: number;
-        }) => ({
+        ({ product, quantity, unitPrice }: { product: { _id: string; title: string; image?: string }; quantity: number; unitPrice: number }) => ({
           productId: product._id,
           title: product.title,
-          image: product.image,
+          image: product.image || "https://via.placeholder.com/100",
           quantity,
           unitPrice,
         })
       );
 
-      setCartItems([...cartItemsMapped]);
+      setCartItems(cartItemsMapped);
       setTotalAmount(cart.totalAmount);
     } catch (error) {
       console.error(error);
@@ -166,7 +157,7 @@ const CartProvider: FC<PropsWithChildren> = ({ children }) => {
     try {
         console.log("Deleting item with ID:", productId); // Debugging
 
-        const response = await fetch("http://localhost:3001/cart/items", {
+        const response = await fetch(`${BASE_URL}/cart/items`, {
             method: "DELETE",
             headers: {
                 "Content-Type": "application/json",
@@ -187,12 +178,41 @@ const CartProvider: FC<PropsWithChildren> = ({ children }) => {
         console.error("Error deleting item:", error);
     }
 };
+      const clearCart = async () =>{
+        try {
+          
+          const response = await fetch(`${BASE_URL}/cart/`, {
+              method: "DELETE",
+              headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `Bearer ${token}`, // If using JWT authentication
+              },
+             
+          });
+  
+          if (!response.ok) {
+              setError("Failed to delete item");
+          }
+          const cart = await response.json();
+          if (!cart) {
+              setError("Failed to parse cart data");
+          }
+
+    
+          setCartItems([]);
+          setTotalAmount(0);
+        } catch (error) {
+          console.error(error);
+        }
+        
+      }
+      
 
 
 
 // ✅ Ensure deleteItemInCart is included in the provider
 return (
-    <CartContext.Provider value={{ cartItems, totalAmount, addItemToCart, updateItemToCart, deleteItemInCart }}>
+    <CartContext.Provider value={{ cartItems, totalAmount, addItemToCart, updateItemToCart, deleteItemInCart, clearCart }}>
         {children}
     </CartContext.Provider>
 );

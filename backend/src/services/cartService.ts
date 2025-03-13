@@ -36,7 +36,8 @@ export const clearCart = async ({ userId }: ClearCart) => {
   const cart = await getActiveCartForUser({ userId });
   cart.items = [];
   cart.totalAmount = 0;
-  await cart.save();
+ 
+ await cart.save();
 
   return {
     data: await getActiveCartForUser({ userId, populateProduct: true }),
