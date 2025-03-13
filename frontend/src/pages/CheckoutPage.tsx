@@ -1,10 +1,41 @@
 import { useEffect, useRef } from "react";
 import { Box, Button, Container, Typography, Paper, TextField } from "@mui/material";
 import { useCart } from "../context/Cart/CartContext";
+import { BASE_URL } from "../constants/baseUrl";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/Auth/AuthContext";
 
 const CheckoutPage = () => {
   const { cartItems, totalAmount } = useCart();
+  const { token } = useAuth()
+
   const addressRef = useRef<HTMLInputElement>(null);
+
+  const navigate = useNavigate()
+
+  const handleConfirmOrder = async () => { 
+    const address = addressRef.current?.value;
+    if (!address) {
+      alert("Please enter a valid address.");
+      return;
+    }
+    
+    const response = await fetch(`${BASE_URL}/cart/checkout`,{
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${token}`, // If using JWT authentication
+                    },
+                    body: JSON.stringify({
+                        address,
+                    }),
+                });
+                if (!response.ok) {
+                    alert("Failed to confirm order.");
+                    return;
+                }
+                navigate("/order-success");
+  };
 
   useEffect(() => {
     console.log("Cart Items in CheckoutPage:", cartItems);
@@ -43,7 +74,7 @@ const CheckoutPage = () => {
         <Typography variant="h5" sx={{ fontWeight: "bold" }}>
           Total Amount: {totalAmount.toFixed(2)} MAD
         </Typography>
-        <Button variant="contained" color="primary">
+        <Button variant="contained" color="primary" onClick={handleConfirmOrder}>
           Pay Now
         </Button>
       </Box>
