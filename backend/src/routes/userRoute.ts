@@ -1,5 +1,7 @@
 import express from "express";
-import { login, register } from "../services/userServices";
+import { getOrdersForUser, login, register } from "../services/userServices";
+import ExtendRequest from "../types/extendedRequest";
+
 
 
 
@@ -27,6 +29,19 @@ route.post('/login', async (request, response) => {
     }
     
 });
+
+route.get('/my-orders', async (request: ExtendRequest, response) => {
+    try {
+        const userId = request?.user?._id;
+        const { statusCode, data } = await getOrdersForUser({ userId });
+
+        response.status(statusCode).json(data);
+    } catch (err) {
+        console.error("Error in route /my-orders:", err);
+        response.status(500).send({ error: "Failed to get orders!" });
+    }
+});
+
 
 
 
